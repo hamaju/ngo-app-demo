@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Molnix NGO App Demo</title>
+    <script src="https://unpkg.com/vue@3.4.34"></script>
+    <script src="https://unpkg.com/vue-router@4.4.0"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+      integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+  </head>
+  <body class="bg-gray-100 flex flex-col h-screen">
+    <div id="app" class="flex flex-col w-full h-full">
+      <!-- Top Bar -->
+      <div
+        class="bg-gray-900 text-white flex justify-between items-center p-4 shadow"
+      >
+        <div class="text-xl text-slate-300 font-bold">Molnix</div>
+        <div class="flex items-center space-x-4">
+          <div class="space-x-5 mr-10">
+            <router-link
+              to="/communications"
+              class="text-white hover:text-gray-400"
+            >
+              <i class="fas fa-envelope fa-lg"></i>
+            </router-link>
+          </div>
+
+          <div
+            @click="toggleMenu"
+            class="relative flex items-center cursor-pointer"
+          >
+            <img
+              src="https://via.placeholder.com/40"
+              alt="User Avatar"
+              class="rounded-full mr-3"
+            />
+            <div>
+              <p class="font-bold">Jane Doe</p>
+              <p class="text-sm">jdoe@molnix.com</p>
+            </div>
+            <div
+              v-if="showMenu"
+              class="absolute top-12 right-0 w-48 bg-gray-800 text-white shadow-lg rounded-md"
+            >
+              <ul>
+                <li class="p-2 hover:bg-gray-600 rounded-t-md">Profile</li>
+                <li class="p-2 hover:bg-gray-600">Settings</li>
+                <li class="p-2 hover:bg-gray-600 rounded-b-md">Logout</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex w-full flex-grow">
+        <nav class="bg-gray-800 w-64 flex-shrink-0 shadow flex flex-col">
+          <!-- <div class="bg-gray-900 text-white p-4 font-bold text-xl">App</div> -->
+          <ul class="p-3 flex-grow">
+            <li class="mb-1">
+              <router-link
+                to="/dashboard"
+                class="block w-full p-2 text-slate-300 bg-gray-800 font-bold hover:bg-gray-700 nav-item"
+                ><i class="fa-solid fa-gauge icon-width"></i
+                ><span class="menu-text">Dashboard</span></router-link
+              >
+            </li>
+            <li class="mb-1">
+              <router-link
+                to="/data-collection"
+                class="block w-full p-2 text-slate-300 bg-gray-800 font-bold hover:bg-gray-700 nav-item"
+                ><i class="fa-solid fa-database icon-width"></i
+                ><span class="menu-text">Data Collection</span></router-link
+              >
+            </li>
+            <li class="mb-1">
+              <router-link
+                to="/data-management"
+                class="block w-full p-2 text-slate-300 bg-gray-800 font-bold hover:bg-gray-700 nav-item"
+                ><i class="fa-solid fa-table icon-width"></i
+                ><span class="menu-text">Data Management</span></router-link
+              >
+            </li>
+            <li class="mb-1 ml-4">
+              <router-link
+                to="/donor-receipts-generator"
+                class="block w-full p-2 text-slate-400 bg-gray-800 hover:bg-gray-700 nav-item"
+                ><span class="sub-menu-text"
+                  >Donor Receipts Generator</span
+                ></router-link
+              >
+            </li>
+            <li class="mb-1">
+              <router-link
+                to="/data-analysis"
+                class="block w-full p-2 text-slate-300 bg-gray-800 font-bold hover:bg-gray-700 nav-item"
+                ><i class="fa-solid fa-magnifying-glass-chart icon-width"></i
+                ><span class="menu-text">Data Analysis</span></router-link
+              >
+            </li>
+            <li class="mb-1">
+              <router-link
+                to="/data-exchange"
+                class="block w-full p-2 text-slate-300 bg-gray-800 font-bold hover:bg-gray-700 nav-item"
+                ><i class="fa-solid fa-right-left icon-width"></i
+                ><span class="menu-text">Data Exchange</span></router-link
+              >
+            </li>
+            <li class="mb-1">
+              <router-link
+                to="/reports"
+                class="block w-full p-2 text-slate-300 bg-gray-800 font-bold hover:bg-gray-700 nav-item"
+                ><i class="fa-solid fa-file-export icon-width"></i
+                ><span class="menu-text">Reports</span></router-link
+              >
+            </li>
+          </ul>
+        </nav>
+        <div class="flex-1 p-4 overflow-auto">
+          <router-view></router-view>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+
+    <script>
+      // Budget Utilization component
+      const BudgetUtilization = {
+        template:
+          '<div ref="budgetUtilization" class="w-full max-w-md mx-auto"></div>',
+        props: {
+          utilization: {
+            type: Number,
+            required: true,
+          },
+        },
+        mounted() {
+          this.drawChart();
+          window.addEventListener("resize", this.drawChart);
+        },
+        beforeUnmount() {
+          window.removeEventListener("resize", this.drawChart);
+        },
+        methods: {
+          drawChart() {
+            const data = this.utilization;
+            const maxDimension = 500;
+            const containerWidth = this.$refs.budgetUtilization.clientWidth;
+            const width = Math.min(containerWidth, maxDimension);
+            const height = 50;
+
+            // Clear any existing SVG elements
+            d3.select(this.$refs.budgetUtilization).selectAll("*").remove();
+
+            const svg = d3
+              .select(this.$refs.budgetUtilization)
+              .append("svg")
+              .attr("viewBox", `0 0 ${width} ${height}`)
+              .attr("preserveAspectRatio", "xMidYMid meet")
+              .attr("width", "100%")
+              .attr("height", "100%");
+
+            svg
+              .append("rect")
+              .attr("width", width)
+              .attr("height", height)
+              .attr("fill", "#e0e0e0");
+
+            svg
+              .append("rect")
+              .attr("width", width * (data / 100))
+              .attr("height", height)
+              .attr("fill", "#df979e");
+
+            svg
+              .append("text")
+              .attr("x", width / 2)
+              .attr("y", height / 2)
+              .attr("dy", ".35em")
+              .attr("text-anchor", "middle")
+              .text(`${data}%`);
+          },
+        },
+      };
+
+      // Financial Health component
+      const FinancialHealth = {
+        template:
+          '<div ref="financialHealth" class="w-full max-w-lg mx-auto"></div>',
+        props: {
+          cashFlow: {
+            type: Array,
+            required: true,
+          },
+          reserves: {
+            type: Array,
+            required: true,
+          },
+        },
+        mounted() {
+          this.drawChart();
+          window.addEventListener("resize", this.drawChart);
+        },
+        beforeUnmount() {
+          window.removeEventListener("resize", this.drawChart);
+        },
+        methods: {
+          drawChart() {
+            const cashFlowData = this.cashFlow;
+            const reservesData = this.reserves;
+            const maxDimension = 600;
+            const containerWidth = this.$refs.financialHealth.clientWidth;
+            const width = Math.min(containerWidth, maxDimension) - 60;
+            const height = (width * 3) / 5;
+            const margin = { top: 20, right: 30, bottom: 40, left: 40 };
+
+            // Clear any existing SVG elements
+            d3.select(this.$refs.financialHealth).selectAll("*").remove();
+
+            const svg = d3
+              .select(this.$refs.financialHealth)
+              .append("svg")
+              .attr(
+                "viewBox",
+                `0 0 ${width + margin.left + margin.right} ${
+                  height + margin.top + margin.bottom
+                }`
+              )
+              .attr("preserveAspectRatio", "xMidYMid meet")
+              .attr("width", "100%")
+              .attr("height", "100%")
+              .append("g")
+              .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x0 = d3
+              .scaleBand()
+              .domain(cashFlowData.map((d) => d.period))
+              .rangeRound([0, width])
+              .padding(0.1);
+
+            const x1 = d3
+              .scaleBand()
+              .domain(["Cash Flow", "Reserves"])
+              .rangeRound([0, x0.bandwidth()]);
+
+            const y = d3
+              .scaleLinear()
+              .domain([
+                0,
+                d3.max([
+                  ...cashFlowData.map((d) => d.value),
+                  ...reservesData.map((d) => d.value),
+                ]),
+              ])
+              .rangeRound([height, 0]);
+
+            svg
+              .append("g")
+              .selectAll("g")
+              .data(cashFlowData)
+              .enter()
+              .append("g")
+              .attr("transform", (d) => `translate(${x0(d.period)},0)`)
+              .selectAll("rect")
+              .data((d) => [
+                { key: "Cash Flow", value: d.value },
+                {
+                  key: "Reserves",
+                  value: reservesData.find((r) => r.period === d.period).value,
+                },
+              ])
+              .enter()
+              .append("rect")
+              .attr("x", (d) => x1(d.key))
+              .attr("y", (d) => y(d.value))
+              .attr("width", x1.bandwidth())
+              .attr("height", (d) => height - y(d.value))
+              .attr("fill", (d) =>
+                d.key === "Cash Flow" ? "#54bebe" : "#badbdb"
+              );
+
+            svg
+              .append("g")
+              .attr("class", "axis")
+              .attr("transform", `translate(0,${height})`)
+              .style("font-size", "14px")
+              .call(d3.axisBottom(x0));
+
+            svg
+              .append("g")
+              .attr("class", "axis")
+              .style("font-size", "12px")
+              .call(d3.axisLeft(y));
+          },
+        },
+      };
+
+      // Cost Efficiency component
+      const CostEfficiency = {
+        template:
+          '<div ref="costEfficiency" class="w-full max-w-lg mx-auto"></div>',
+        props: {
+          planned: {
+            type: Array,
+            required: true,
+          },
+          actual: {
+            type: Array,
+            required: true,
+          },
+        },
+        mounted() {
+          this.drawChart();
+          window.addEventListener("resize", this.drawChart);
+        },
+        beforeUnmount() {
+          window.removeEventListener("resize", this.drawChart);
+        },
+        methods: {
+          drawChart() {
+            const plannedData = this.planned;
+            const actualData = this.actual;
+            const maxDimension = 600;
+            const containerWidth = this.$refs.costEfficiency.clientWidth;
+            const width = Math.min(containerWidth, maxDimension) - 60;
+            const height = (width * 3) / 5;
+            const margin = { top: 20, right: 30, bottom: 30, left: 40 };
+
+            // Clear any existing SVG elements
+            d3.select(this.$refs.costEfficiency).selectAll("*").remove();
+
+            const x = d3
+              .scaleLinear()
+              .domain([0, plannedData.length - 1])
+              .range([0, width]);
+            const y = d3
+              .scaleLinear()
+              .domain([0, d3.max([...plannedData, ...actualData])])
+              .range([height, 0]);
+
+            const line = d3
+              .line()
+              .x((d, i) => x(i))
+              .y((d) => y(d));
+
+            const svg = d3
+              .select(this.$refs.costEfficiency)
+              .append("svg")
+              .attr(
+                "viewBox",
+                `0 0 ${width + margin.left + margin.right} ${
+                  height + margin.top + margin.bottom
+                }`
+              )
+              .attr("preserveAspectRatio", "xMidYMid meet")
+              .attr("width", "100%")
+              .attr("height", "100%")
+              .append("g")
+              .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            svg
+              .append("g")
+              .attr("transform", `translate(0,${height})`)
+              .style("font-size", "14px")
+              .call(d3.axisBottom(x));
+
+            svg.append("g").style("font-size", "12px").call(d3.axisLeft(y));
+
+            svg
+              .append("path")
+              .datum(plannedData)
+              .attr("fill", "none")
+              .attr("stroke", "#4682B4")
+              .attr("stroke-width", 1.5)
+              .attr("d", line);
+
+            svg
+              .append("path")
+              .datum(actualData)
+              .attr("fill", "none")
+              .attr("stroke", "#6A5ACD")
+              .attr("stroke-width", 1.5)
+              .attr("d", line);
+          },
+        },
+      };
+
+      // Funding Sources component
+      const FundingSources = {
+        template:
+          '<div ref="fundingSources" class="w-full max-w-md mx-auto"></div>',
+        props: {
+          data: {
+            type: Array,
+            required: true,
+          },
+        },
+        mounted() {
+          this.drawChart();
+          window.addEventListener("resize", this.drawChart);
+        },
+        beforeUnmount() {
+          window.removeEventListener("resize", this.drawChart);
+        },
+        methods: {
+          drawChart() {
+            const data = this.data;
+            const maxDimension = 500;
+            const containerWidth = this.$refs.fundingSources.clientWidth;
+            const size = Math.min(containerWidth, maxDimension);
+            const radius = size / 2;
+
+            // Clear any existing SVG elements
+            d3.select(this.$refs.fundingSources).selectAll("*").remove();
+
+            const color = d3.scaleOrdinal([
+              "#1984c5",
+              "#22a7f0",
+              "#63bff0",
+              "#a7d5ed",
+              "#e2e2e2",
+            ]);
+
+            const pie = d3.pie().value((d) => d.value);
+            const arc = d3
+              .arc()
+              .innerRadius(radius * 0.3)
+              .outerRadius(radius);
+            const labelArc = d3
+              .arc()
+              .innerRadius(radius * 0.6)
+              .outerRadius(radius * 0.7);
+
+            const svg = d3
+              .select(this.$refs.fundingSources)
+              .append("svg")
+              .attr("viewBox", `0 0 ${size} ${size}`)
+              .attr("preserveAspectRatio", "xMidYMid meet")
+              .attr("width", "100%")
+              .attr("height", "100%")
+              .append("g")
+              .attr("transform", `translate(${size / 2},${size / 2})`);
+
+            const g = svg
+              .selectAll(".arc")
+              .data(pie(data))
+              .enter()
+              .append("g")
+              .attr("class", "arc");
+
+            g.append("path")
+              .attr("d", arc)
+              .style("fill", (d) => color(d.data.label));
+
+            g.append("text")
+              .attr("transform", (d) => `translate(${labelArc.centroid(d)})`)
+              .attr("dy", "0.35em")
+              .style("font-size", `${Math.min(size / 25, 15)}px`)
+              .attr("text-anchor", "middle")
+              .style("fill", "white")
+              .text((d) => d.data.label)
+              .each(function (d) {
+                const self = d3.select(this);
+                const words = d.data.label.split(/\s+/).reverse();
+                let word;
+                let line = [];
+                let lineNumber = 0;
+                const lineHeight = 1; // ems
+                const y = self.attr("y");
+                const dy = parseFloat(self.attr("dy"));
+                let tspan = self
+                  .text(null)
+                  .append("tspan")
+                  .attr("x", 0)
+                  .attr("y", y)
+                  .attr("dy", dy + "em");
+
+                while ((word = words.pop())) {
+                  line.push(word);
+                  tspan.text(line.join(" "));
+                  if (tspan.node().getComputedTextLength() > radius * 0.4) {
+                    line.pop();
+                    tspan.text(line.join(" "));
+                    line = [word];
+                    tspan = self
+                      .append("tspan")
+                      .attr("x", 0)
+                      .attr("y", y)
+                      .attr("dy", ++lineNumber * lineHeight + dy + "em")
+                      .text(word);
+                  }
+                }
+              });
+          },
+        },
+      };
+
+      // Staff Productivity component
+      const StaffProductivity = {
+        template:
+          '<div ref="staffProductivity" class="w-full max-w-lg mx-auto"></div>',
+        props: {
+          data: {
+            type: Array,
+            required: true,
+          },
+        },
+        mounted() {
+          this.drawChart();
+          window.addEventListener("resize", this.drawChart);
+        },
+        beforeUnmount() {
+          window.removeEventListener("resize", this.drawChart);
+        },
+        methods: {
+          drawChart() {
+            const data = this.data;
+            const maxDimension = 800;
+            const containerWidth = this.$refs.staffProductivity.clientWidth;
+            const width = Math.min(containerWidth, maxDimension) - 60;
+            const height = (width * 3) / 5;
+            const margin = { top: 20, right: 30, bottom: 40, left: 40 };
+
+            // Clear any existing SVG elements
+            d3.select(this.$refs.staffProductivity).selectAll("*").remove();
+
+            const color = d3.scaleOrdinal([
+              "#dedad2",
+              "#e4bcad",
+              "#df979e",
+              "#d7658b",
+              "#c80064",
+            ]);
+
+            const svg = d3
+              .select(this.$refs.staffProductivity)
+              .append("svg")
+              .attr(
+                "viewBox",
+                `0 0 ${width + margin.left + margin.right} ${
+                  height + margin.top + margin.bottom
+                }`
+              )
+              .attr("preserveAspectRatio", "xMidYMid meet")
+              .attr("width", "100%")
+              .attr("height", "100%")
+              .append("g")
+              .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3
+              .scaleBand()
+              .domain(data.map((d) => d.staff))
+              .range([0, width])
+              .padding(0.1);
+
+            const y = d3
+              .scaleLinear()
+              .domain([0, d3.max(data, (d) => d.output)])
+              .nice()
+              .range([height, 0]);
+
+            svg
+              .append("g")
+              .attr("transform", `translate(0,${height})`)
+              .style("font-size", "14px")
+              .call(d3.axisBottom(x));
+
+            svg.append("g").style("font-size", "14px").call(d3.axisLeft(y));
+
+            svg
+              .selectAll(".bar")
+              .data(data)
+              .enter()
+              .append("rect")
+              .attr("class", "bar")
+              .attr("x", (d) => x(d.staff))
+              .attr("y", (d) => y(d.output))
+              .attr("width", x.bandwidth())
+              .attr("height", (d) => height - y(d.output))
+              .attr("fill", (d, i) => color(i));
+          },
+        },
+      };
+
+      // Employee Satisfaction component
+      const EmployeeSatisfaction = {
+        template:
+          '<div ref="employeeSatisfaction" class="w-full max-w-lg mx-auto"></div>',
+        props: {
+          data: {
+            type: Array,
+            required: true,
+          },
+        },
+        mounted() {
+          this.drawChart();
+          window.addEventListener("resize", this.drawChart);
+        },
+        beforeUnmount() {
+          window.removeEventListener("resize", this.drawChart);
+        },
+        methods: {
+          drawChart() {
+            const data = this.data;
+            const maxDimension = 600;
+            const containerWidth = this.$refs.employeeSatisfaction.clientWidth;
+            const width = Math.min(containerWidth, maxDimension) - 60;
+            const height = (width * 3) / 5;
+            const margin = { top: 20, right: 30, bottom: 70, left: 40 };
+
+            // Clear any existing SVG elements
+            d3.select(this.$refs.employeeSatisfaction).selectAll("*").remove();
+
+            const svg = d3
+              .select(this.$refs.employeeSatisfaction)
+              .append("svg")
+              .attr(
+                "viewBox",
+                `0 0 ${width + margin.left + margin.right} ${
+                  height + margin.top + margin.bottom
+                }`
+              )
+              .attr("preserveAspectRatio", "xMidYMid meet")
+              .attr("width", "100%")
+              .attr("height", "100%")
+              .append("g")
+              .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3
+              .scaleTime()
+              .domain(d3.extent(data, (d) => d.date))
+              .range([0, width]);
+
+            const y = d3
+              .scaleLinear()
+              .domain([
+                0,
+                d3.max(data, (d) => Math.max(d.turnover, d.satisfaction)),
+              ])
+              .range([height, 0]);
+
+            svg
+              .append("g")
+              .attr("transform", `translate(0,${height})`)
+              .call(d3.axisBottom(x).tickFormat(d3.timeFormat("%b %Y")))
+              .selectAll("text")
+              .attr("transform", "rotate(-45)")
+              .style("font-size", "13px")
+              .style("text-anchor", "end");
+
+            svg.append("g").style("font-size", "12px").call(d3.axisLeft(y));
+
+            svg
+              .append("path")
+              .datum(data)
+              .attr("fill", "none")
+              .attr("stroke", "#4682B4")
+              .attr("stroke-width", 1.5)
+              .attr(
+                "d",
+                d3
+                  .line()
+                  .x((d) => x(d.date))
+                  .y((d) => y(d.turnover))
+              );
+
+            svg
+              .append("path")
+              .datum(data)
+              .attr("fill", "none")
+              .attr("stroke", "#6A5ACD")
+              .attr("stroke-width", 1.5)
+              .attr(
+                "d",
+                d3
+                  .line()
+                  .x((d) => x(d.date))
+                  .y((d) => y(d.satisfaction))
+              );
+          },
+        },
+      };
+
+      // Training Development component
+      const TrainingDevelopment = {
+        template:
+          '<div ref="trainingDevelopment" class="w-full max-w-lg mx-auto"></div>',
+        props: {
+          data: {
+            type: Array,
+            required: true,
+          },
+        },
+        mounted() {
+          this.drawChart();
+          window.addEventListener("resize", this.drawChart);
+        },
+        beforeUnmount() {
+          window.removeEventListener("resize", this.drawChart);
+        },
+        methods: {
+          drawChart() {
+            const data = this.data;
+            const maxDimension = 600;
+            const containerWidth = this.$refs.trainingDevelopment.clientWidth;
+            const width = Math.min(containerWidth, maxDimension) - 60;
+            const height = (width * 3) / 5;
+            const margin = { top: 20, right: 30, bottom: 40, left: 40 };
+
+            // Clear any existing SVG elements
+            d3.select(this.$refs.trainingDevelopment).selectAll("*").remove();
+
+            const color = d3.scaleOrdinal(["#466964", "#599e94", "#6cd4c5"]);
+
+            const svg = d3
+              .select(this.$refs.trainingDevelopment)
+              .append("svg")
+              .attr(
+                "viewBox",
+                `0 0 ${width + margin.left + margin.right} ${
+                  height + margin.top + margin.bottom
+                }`
+              )
+              .attr("preserveAspectRatio", "xMidYMid meet")
+              .attr("width", "100%")
+              .attr("height", "100%")
+              .append("g")
+              .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3
+              .scaleBand()
+              .domain(data.map((d) => d.metric))
+              .range([0, width])
+              .padding(0.1);
+
+            const y = d3
+              .scaleLinear()
+              .domain([0, d3.max(data, (d) => d.value)])
+              .nice()
+              .range([height, 0]);
+
+            svg
+              .append("g")
+              .attr("transform", `translate(0,${height})`)
+              .style("font-size", "14px")
+              .call(d3.axisBottom(x));
+
+            svg.append("g").style("font-size", "12px").call(d3.axisLeft(y));
+
+            svg
+              .selectAll(".bar")
+              .data(data)
+              .enter()
+              .append("rect")
+              .attr("class", "bar")
+              .attr("x", (d) => x(d.metric))
+              .attr("y", (d) => y(d.value))
+              .attr("width", x.bandwidth())
+              .attr("height", (d) => height - y(d.value))
+              .attr("fill", (d, i) => color(i));
+          },
+        },
+      };
+
+      // Dashboard component
+      const Dashboard = {
+        data() {
+          return {
+            budgetUtilization: 75,
+            plannedCosts: [100, 200, 300, 400, 500],
+            actualCosts: [90, 180, 320, 380, 470],
+            fundingSources: [
+              { label: "Grants", value: 40 },
+              { label: "Donations", value: 25 },
+              { label: "Corporate Sponsorships", value: 20 },
+              { label: "Government Funding", value: 15 },
+            ],
+            cashFlow: [
+              { period: "Q1", value: 10000 },
+              { period: "Q2", value: 12000 },
+              { period: "Q3", value: 8000 },
+              { period: "Q4", value: 15000 },
+            ],
+            reserves: [
+              { period: "Q1", value: 5000 },
+              { period: "Q2", value: 7000 },
+              { period: "Q3", value: 6000 },
+              { period: "Q4", value: 8000 },
+            ],
+            staffProductivityData: [
+              { staff: "John", output: 100 },
+              { staff: "Jane", output: 120 },
+              { staff: "Doe", output: 110 },
+            ],
+            employeeSatisfactionData: [
+              { date: new Date(2024, 0, 1), turnover: 5, satisfaction: 75 },
+              { date: new Date(2024, 1, 1), turnover: 6, satisfaction: 78 },
+              { date: new Date(2024, 2, 1), turnover: 4, satisfaction: 80 },
+              { date: new Date(2024, 3, 1), turnover: 7, satisfaction: 76 },
+            ],
+            trainingDevelopmentData: [
+              { metric: "Training Sessions", value: 10 },
+              { metric: "Staff Development", value: 8 },
+            ],
+          };
+        },
+        template: `
+          <div>
+            <h2 class="text-2xl font-bold mb-4">Dashboard</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              <div class="bg-white rounded-lg shadow p-4 flex flex-col space-y-4">
+                <div>
+                  <h3 class="text-xl font-semibold mb-2">Budget Utilization</h3>
+                  <div class="chart-container">
+                    <BudgetUtilization :utilization="budgetUtilization" />
+                  </div>
+                </div>
+                <div>
+                  <h3 class="text-xl font-semibold mb-2">Financial Health</h3>
+                  <div class="chart-container">
+                    <FinancialHealth :cashFlow="cashFlow" :reserves="reserves" />
+                  </div>
+                </div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-xl font-semibold mb-2">Cost Efficiency</h3>
+                <div class="chart-container">
+                  <CostEfficiency :planned="plannedCosts" :actual="actualCosts" />
+                </div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-xl font-semibold mb-2">Funding Sources and Diversity</h3>
+                <div class="chart-container">
+                  <FundingSources :data="fundingSources" />
+                </div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-xl font-semibold mb-2">Staff Productivity</h3>
+                <div class="chart-container">
+                  <StaffProductivity :data="staffProductivityData" />
+                </div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-xl font-semibold mb-2">Employee Satisfaction and Retention</h3>
+                <div class="chart-container">
+                  <EmployeeSatisfaction :data="employeeSatisfactionData" />
+                </div>
+              </div>
+              <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-xl font-semibold mb-2">Training and Development</h3>
+                <div class="chart-container">
+                  <TrainingDevelopment :data="trainingDevelopmentData" />
+                </div>
+              </div>
+            </div>
+          </div>
+      `,
+      };
+
+      const DataCollection = {
+        template: `
+          <div>
+            <h2 class="text-2xl font-bold mb-4">Data Collection Templates</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div class="bg-white rounded shadow overflow-hidden h-64 flex flex-col">
+                <div class="bg-gray-300 h-32 flex items-center justify-center">
+                  <span class="text-gray-500">Image Placeholder</span>
+                </div>
+                <div class="p-4 flex flex-col justify-between flex-grow">
+                  <div>
+                    <h3 class="font-bold text-xl mb-2">Template 1</h3>
+                    <p class="text-gray-700 mb-4">This is a description for Template 1.</p>
+                  </div>
+                  <button class="bg-blue-500 text-white p-2 rounded mt-auto">Choose Template</button>
+                </div>
+              </div>
+              <div class="bg-white rounded shadow overflow-hidden h-64 flex flex-col">
+                <div class="bg-gray-300 h-32 flex items-center justify-center">
+                  <span class="text-gray-500">Image Placeholder</span>
+                </div>
+                <div class="p-4 flex flex-col justify-between flex-grow">
+                  <div>
+                    <h3 class="font-bold text-xl mb-2">Template 2</h3>
+                    <p class="text-gray-700 mb-4">This is a description for Template 2.</p>
+                  </div>
+                  <button class="bg-blue-500 text-white p-2 rounded mt-auto">Choose Template</button>
+                </div>
+              </div>
+              <div class="bg-white rounded shadow overflow-hidden h-64 flex flex-col">
+                <div class="bg-gray-300 h-32 flex items-center justify-center">
+                  <span class="text-gray-500">Image Placeholder</span>
+                </div>
+                <div class="p-4 flex flex-col justify-between flex-grow">
+                  <div>
+                    <h3 class="font-bold text-xl mb-2">Template 3</h3>
+                    <p class="text-gray-700 mb-4">This is a description for Template 3.</p>
+                  </div>
+                  <button class="bg-blue-500 text-white p-2 rounded mt-auto">Choose Template</button>
+                </div>
+              </div>
+              <div class="bg-white rounded shadow overflow-hidden h-64 flex flex-col">
+                <div class="bg-gray-300 h-32 flex items-center justify-center">
+                  <span class="text-gray-500">Image Placeholder</span>
+                </div>
+                <div class="p-4 flex flex-col justify-between flex-grow">
+                  <div>
+                    <h3 class="font-bold text-xl mb-2">Template 4</h3>
+                    <p class="text-gray-700 mb-4">This is a description for Template 4.</p>
+                  </div>
+                  <button class="bg-blue-500 text-white p-2 rounded mt-auto">Choose Template</button>
+                </div>
+              </div>
+              <div class="bg-white rounded shadow overflow-hidden h-64 flex flex-col">
+                <div class="bg-gray-300 h-32 flex items-center justify-center">
+                  <span class="text-gray-500">Image Placeholder</span>
+                </div>
+                <div class="p-4 flex flex-col justify-between flex-grow">
+                  <div>
+                    <h3 class="font-bold text-xl mb-2">Template 5</h3>
+                    <p class="text-gray-700 mb-4">This is a description for Template 5.</p>
+                  </div>
+                  <button class="bg-blue-500 text-white p-2 rounded mt-auto">Choose Template</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `,
+      };
+
+      const DataManagement = {
+        template: `
+          <div class="h-full">
+            <h2 class="text-2xl font-bold mb-4">Data Management</h2>
+            <h3 class="text-xl font-bold mb-4">Donors and Sponsors</h3>
+            <div class="overflow-auto">
+              <table class="bg-white border-collapse border border-slate-500">
+                <thead>
+                  <tr>
+                    <th class="py-2 px-4 border">Donor and Sponsor Info</th>
+                    <th class="py-2 px-4 border">Name</th>
+                    <th class="py-2 px-4 border">Age</th>
+                    <th class="py-2 px-4 border">Organization/Company</th>
+                    <th class="py-2 px-4 border">State/City/Province/Country</th>
+                    <th class="py-2 px-4 border">Corporate Donation</th>
+                    <th class="py-2 px-4 border">Events/Drives</th>
+                    <th class="py-2 px-4 border">Public Donation</th>
+                    <th class="py-2 px-4 border">Personal Donation</th>
+                    <th class="py-2 px-4 border">Donation Amount</th>
+                    <th class="py-2 px-4 border">Cash/Online Transfer/Gift</th>
+                    <th class="py-2 px-4 border">Communication Platform</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="py-2 px-4 border">Example Donor Info</td>
+                    <td class="py-2 px-4 border">John Doe</td>
+                    <td class="py-2 px-4 border">45</td>
+                    <td class="py-2 px-4 border">ABC Corp</td>
+                    <td class="py-2 px-4 border">New York, USA</td>
+                    <td class="py-2 px-4 border">Yes</td>
+                    <td class="py-2 px-4 border">No</td>
+                    <td class="py-2 px-4 border">Yes</td>
+                    <td class="py-2 px-4 border">No</td>
+                    <td class="py-2 px-4 border">$1000</td>
+                    <td class="py-2 px-4 border">Online Transfer</td>
+                    <td class="py-2 px-4 border">Email</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2 px-4 border">Example Sponsor Info</td>
+                    <td class="py-2 px-4 border">Jane Smith</td>
+                    <td class="py-2 px-4 border">38</td>
+                    <td class="py-2 px-4 border">XYZ Inc</td>
+                    <td class="py-2 px-4 border">Los Angeles, USA</td>
+                    <td class="py-2 px-4 border">No</td>
+                    <td class="py-2 px-4 border">Yes</td>
+                    <td class="py-2 px-4 border">No</td>
+                    <td class="py-2 px-4 border">Yes</td>
+                    <td class="py-2 px-4 border">$500</td>
+                    <td class="py-2 px-4 border">Cash</td>
+                    <td class="py-2 px-4 border">Phone</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2 px-4 border">
+                      <textarea class="w-full h-full border-none outline-none resize-none bg-transparent"></textarea>
+                    </td>
+                    <td class="py-2 px-4 border">
+                      <textarea class="w-full h-full border-none outline-none resize-none bg-transparent"></textarea>
+                    </td>
+                    <td class="py-2 px-4 border">
+                      <textarea class="w-full h-full border-none outline-none resize-none bg-transparent"></textarea>
+                    </td>
+                    <td class="py-2 px-4 border">
+                      <textarea class="w-full h-full border-none outline-none resize-none bg-transparent"></textarea>
+                    </td>
+                    <td class="py-2 px-4 border">
+                      <textarea class="w-full h-full border-none outline-none resize-none bg-transparent"></textarea>
+                    </td>
+                    <td class="py-2 px-4 border">
+                      <textarea class="w-full h-full border-none outline-none resize-none bg-transparent"></textarea>
+                    </td>
+                    <td class="py-2 px-4 border">
+                      <textarea class="w-full h-full border-none outline-none resize-none bg-transparent"></textarea>
+                    </td>
+                    <td class="py-2 px-4 border">
+                      <textarea class="w-full h-full border-none outline-none resize-none bg-transparent"></textarea>
+                    </td>
+                    <td class="py-2 px-4 border">
+                      <textarea class="w-full h-full border-none outline-none resize-none bg-transparent"></textarea>
+                    </td>
+                    <td class="py-2 px-4 border">
+                      <textarea class="w-full h-full border-none outline-none resize-none bg-transparent"></textarea>
+                    </td>
+                    <td class="py-2 px-4 border">
+                      <textarea class="w-full h-full border-none outline-none resize-none bg-transparent"></textarea>
+                    </td>
+                    <td class="py-2 px-4 border">
+                      <textarea class="w-full h-full border-none outline-none resize-none bg-transparent"></textarea>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <button class="bg-blue-500 text-white p-2 px-4 mt-4 rounded">Save</button>
+            </div>
+          </div>
+        `,
+      };
+
+      const DonorReceiptsGenerator = {
+        template: `
+          <div class="h-full">
+            <h2 class="text-2xl font-bold mb-4">Donor Receipts Generator</h2>
+            <form class="bg-white p-6 rounded shadow-md space-y-4">
+              <div>
+                <label class="block text-gray-700 font-bold mb-2" for="donor-name">Donor Name</label>
+                <input class="w-full p-2 border border-gray-300 rounded" id="donor-name" type="text">
+              </div>
+              <div>
+                <label class="block text-gray-700 font-bold mb-2" for="email">Email</label>
+                <input class="w-full p-2 border border-gray-300 rounded" id="email" type="email">
+              </div>
+              <div>
+                <label class="block text-gray-700 font-bold mb-2" for="phone-number">Phone Number</label>
+                <input class="w-full p-2 border border-gray-300 rounded" id="phone-number" type="tel">
+              </div>
+              <div>
+                <label class="block text-gray-700 font-bold mb-2" for="amount">Amount</label>
+                <input class="w-full p-2 border border-gray-300 rounded" id="amount" type="number">
+              </div>
+              <div>
+                <label class="block text-gray-700 font-bold mb-2" for="volunteer">Volunteer</label>
+                <select class="w-full p-2 border border-gray-300 rounded" id="volunteer">
+                  <option>Volunteer 1</option>
+                  <option>Volunteer 2</option>
+                  <option>Volunteer 3</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-gray-700 font-bold mb-2" for="purpose">Purpose</label>
+                <select class="w-full p-2 border border-gray-300 rounded" id="purpose">
+                  <option>Purpose 1</option>
+                  <option>Purpose 2</option>
+                  <option>Purpose 3</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-gray-700 font-bold mb-2" for="pan-no">PAN No.</label>
+                <input class="w-full p-2 border border-gray-300 rounded" id="pan-no" type="text">
+              </div>
+              <div>
+                <label class="block text-gray-700 font-bold mb-2" for="address">Address</label>
+                <input class="w-full p-2 border border-gray-300 rounded" id="address" type="text">
+              </div>
+              <div>
+                <label class="block text-gray-700 font-bold mb-2" for="payment-type">Payment Type</label>
+                <select class="w-full p-2 border border-gray-300 rounded" id="payment-type">
+                  <option>Cash</option>
+                  <option>Online Transfer</option>
+                  <option>Gift</option>
+                </select>
+              </div>
+              <div>
+                <button class="bg-blue-500 text-white p-2 mt-4 rounded">Generate Receipt</button>
+              </div>
+            </form>
+          </div>
+        `,
+      };
+
+      const DataAnalysis = {
+        template: `
+          <div class="h-full">
+            <h2 class="text-2xl font-bold mb-4">Data Analysis</h2>
+            <h3 class="text-xl font-bold mb-4">Fundraising</h3>
+            <h4 class="text-md text-slate-500 font-bold mb-2">Donation Overview</h4>
+            <table class="bg-white border-collapse border border-slate-500">
+              <thead>
+                <tr>
+                  <th class="py-2 px-4 border">Total Donation Amount</th>
+                  <th class="py-2 px-4 border">Donor Count</th>
+                  <th class="py-2 px-4 border">Recurring Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                </tr>
+                <tr>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                </tr>
+              </tbody>
+            </table>
+            <h4 class="text-md text-slate-500 font-bold mb-2 mt-4">Recurring Overview</h4>
+            <table class="bg-white border-collapse border border-slate-500">
+              <thead>
+                <tr>
+                  <th class="py-2 px-4 border">Recurring Amount</th>
+                  <th class="py-2 px-4 border">Recurring Donors</th>
+                  <th class="py-2 px-4 border">Recurring Amount by Month</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                </tr>
+                <tr>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                </tr>
+              </tbody>
+            </table>
+            <h4 class="text-md text-slate-500 font-bold mb-2 mt-4">Peer-to-peer Fundraiser Overview</h4>
+            <table class="bg-white border-collapse border border-slate-500">
+              <thead>
+                <tr>
+                  <th class="py-2 px-4 border">Raised by Fundraisers</th>
+                  <th class="py-2 px-4 border">Fundraiser Count</th>
+                  <th class="py-2 px-4 border">Transacting Fundraiser Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                </tr>
+                <tr>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                </tr>
+              </tbody>
+            </table>
+            <h4 class="text-md text-slate-500 font-bold mb-2 mt-4">Fundraising KPIs</h4>
+            <table class="bg-white border-collapse border border-slate-500">
+              <thead>
+                <tr>
+                  <th class="py-2 px-4 border">Acquisition Cost</th>
+                  <th class="py-2 px-4 border">Retention Rate</th>
+                  <th class="py-2 px-4 border">Average Gift Size</th>
+                  <th class="py-2 px-4 border">Ask Made</th>
+                  <th class="py-2 px-4 border">Demographics</th>
+                  <th class="py-2 px-4 border">Lifetime Value</th>
+                  <th class="py-2 px-4 border">Donor Growth (YOY)</th>
+                  <th class="py-2 px-4 border">Donor Retention Rate</th>
+                  <th class="py-2 px-4 border">Recurring Gift Percentage</th>
+                  <th class="py-2 px-4 border">Social Media Engagement</th>
+                  <th class="py-2 px-4 border">Fundraising ROI</th>
+                  <th class="py-2 px-4 border">Online Gift Percentage</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                </tr>
+                <tr>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3 class="text-xl font-bold mb-4 mt-4">Operations</h3>
+            <h4 class="text-md text-slate-500 font-bold mb-2 mt-4">Financial Management</h4>
+            <table class="bg-white border-collapse border border-slate-500">
+              <thead>
+                <tr>
+                  <th class="py-2 px-4 border">Budget Utilization</th>
+                  <th class="py-2 px-4 border">Cost Efficiency</th>
+                  <th class="py-2 px-4 border">Funding Sources and Diversity</th>
+                  <th class="py-2 px-4 border">Financial Health</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                </tr>
+                <tr>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3 class="text-xl font-bold mb-4 mt-4">Impact</h3>
+            <h4 class="text-md text-slate-500 font-bold mb-2 mt-4">Program Performance</h4>
+            <table class="bg-white border-collapse border border-slate-500">
+              <thead>
+                <tr>
+                  <th class="py-2 px-4 border">Beneficiary Reach</th>
+                  <th class="py-2 px-4 border">Service Delivery Metrics</th>
+                  <th class="py-2 px-4 border">Outcome/Impact Indicators</th>
+                  <th class="py-2 px-4 border">Program Efficiency</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                </tr>
+                <tr>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                </tr>
+              </tbody>
+            </table>
+            <h4 class="text-md text-slate-500 font-bold mb-2 mt-4">Environmental Sustainability</h4>
+            <table class="bg-white border-collapse border border-slate-500">
+              <thead>
+                <tr>
+                  <th class="py-2 px-4 border">Metrics on Resource Use</th>
+                  <th class="py-2 px-4 border">Waste Management</th>
+                  <th class="py-2 px-4 border">Environmental Footprint</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                </tr>
+                <tr>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                </tr>
+              </tbody>
+            </table>
+            <h4 class="text-md text-slate-500 font-bold mb-2 mt-4">Social Impact</h4>
+            <table class="bg-white border-collapse border border-slate-500">
+              <thead>
+                <tr>
+                  <th class="py-2 px-4 border">Indicator 1</th>
+                  <th class="py-2 px-4 border">Indicator 2</th>
+                  <th class="py-2 px-4 border">Indicator 3</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                </tr>
+                <tr>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                  <td class="py-2 px-4 border">…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        `,
+      };
+
+      const Reports = {
+        data() {
+          return {
+            selectedOption: null,
+          };
+        },
+        methods: {
+          selectOption(option) {
+            this.selectedOption = option;
+          },
+        },
+        template: `
+          <div class="h-full">
+            <h2 class="text-2xl font-bold mb-4">Reports</h2>
+            <p>Please select a template to get started.</p>
+            <h3 class="text-xl font-bold mb-4 mt-3  ">Operations</h3>
+            <div class="w-full p-4 flex">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div 
+                  @click="selectOption('financialManagement')"
+                  :class="['p-4 rounded-lg cursor-pointer shadow', selectedOption === 'financialManagement' ? 'border-2 border-blue-500' : 'border border-gray-300']"
+                >
+                  <div class="flex justify-between items-start">
+                    <h3 class="text-lg font-semibold">Financial Management</h3>
+                    <span v-if="selectedOption === 'financialManagement'" class="text-blue-500">
+                      <i class="fas fa-check-circle"></i>
+                    </span>
+                  </div>
+                  <p class="text-gray-600 mt-2">Insights about metrics like budget utilization.</p>
+                </div>
+              </div>
+            </div>
+            <h3 class="text-xl font-bold mb-4 mt-4">Fundraising</h3>
+            <div class="w-full p-4 flex">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div 
+                  @click="selectOption('fundraisingKpis')"
+                  :class="['p-4 rounded-lg cursor-pointer shadow', selectedOption === 'fundraisingKpis' ? 'border-2 border-blue-500' : 'border border-gray-300']"
+                >
+                  <div class="flex justify-between items-start">
+                    <h3 class="text-lg font-semibold">Fundraising KPIs</h3>
+                    <span v-if="selectedOption === 'fundraisingKpis'" class="text-blue-500">
+                      <i class="fas fa-check-circle"></i>
+                    </span>
+                  </div>
+                  <p class="text-gray-600 mt-2">Get metrics like Retention rate and Average gift size.</p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <button class="bg-blue-500 text-white p-2 px-4 ml-4 mt-4 rounded">Next</button>
+            </div>
+          </div>
+        `,
+      };
+
+      const KPIs = {
+        template: `
+          <div class="h-full">
+            <h2 class="text-2xl font-bold mb-4">KPIs</h2>
+          </div>
+        `,
+      };
+
+      const Communications = {
+        template: `
+          <div class="h-full">
+            <h2 class="text-2xl font-bold mb-4">Communications</h2>
+            <h3 class="text-xl font-bold mb-4">Meeting Schedule</h3>
+            <div class="overflow-auto">
+              <table class="min-w-full bg-white shadow-md rounded-lg">
+                <thead>
+                  <tr>
+                    <th class="py-2 px-4 border-b uppercase text-xs">Meeting Subject</th>
+                    <th class="py-2 px-4 border-b uppercase text-xs">Meeting #</th>
+                    <th class="py-2 px-4 border-b uppercase text-xs">Item</th>
+                    <th class="py-2 px-4 border-b uppercase text-xs">Meeting Business Item</th>
+                    <th class="py-2 px-4 border-b uppercase text-xs">Assigned To</th>
+                    <th class="py-2 px-4 border-b uppercase text-xs">Date</th>
+                    <th class="py-2 px-4 border-b uppercase text-xs">Due Date</th>
+                    <th class="py-2 px-4 border-b uppercase text-xs">Closed On</th>
+                    <th class="py-2 px-4 border-b uppercase text-xs">Status</th>
+                    <th class="py-2 px-4 border-b uppercase text-xs">Delay</th>
+                    <th class="py-2 px-4 border-b uppercase text-xs">Task</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="odd:bg-gray-100">
+                    <td class="py-2 px-4 border-b">Project Kickoff</td>
+                    <td class="py-2 px-4 border-b">1</td>
+                    <td class="py-2 px-4 border-b">1</td>
+                    <td class="py-2 px-4 border-b">Introduction</td>
+                    <td class="py-2 px-4 border-b">John Doe</td>
+                    <td class="py-2 px-4 border-b">2024-07-01</td>
+                    <td class="py-2 px-4 border-b">2024-07-15</td>
+                    <td class="py-2 px-4 border-b">2024-07-14</td>
+                    <td class="py-2 px-4 border-b">Completed</td>
+                    <td class="py-2 px-4 border-b">None</td>
+                    <td class="py-2 px-4 border-b">Prepare presentation</td>
+                  </tr>
+                  <tr class="odd:bg-gray-100">
+                    <td class="py-2 px-4 border-b">Design Review</td>
+                    <td class="py-2 px-4 border-b">2</td>
+                    <td class="py-2 px-4 border-b">1</td>
+                    <td class="py-2 px-4 border-b">Discuss initial designs</td>
+                    <td class="py-2 px-4 border-b">Jane Smith</td>
+                    <td class="py-2 px-4 border-b">2024-07-10</td>
+                    <td class="py-2 px-4 border-b">2024-07-20</td>
+                    <td class="py-2 px-4 border-b">2024-07-19</td>
+                    <td class="py-2 px-4 border-b">Completed</td>
+                    <td class="py-2 px-4 border-b">None</td>
+                    <td class="py-2 px-4 border-b">Review design mockups</td>
+                  </tr>
+                  <tr class="odd:bg-gray-100">
+                    <td class="py-2 px-4 border-b">Sprint Planning</td>
+                    <td class="py-2 px-4 border-b">3</td>
+                    <td class="py-2 px-4 border-b">1</td>
+                    <td class="py-2 px-4 border-b">Plan sprint tasks</td>
+                    <td class="py-2 px-4 border-b">Ada Lovelace</td>
+                    <td class="py-2 px-4 border-b">2024-07-15</td>
+                    <td class="py-2 px-4 border-b">2024-07-25</td>
+                    <td class="py-2 px-4 border-b">2024-07-24</td>
+                    <td class="py-2 px-4 border-b">Completed</td>
+                    <td class="py-2 px-4 border-b">None</td>
+                    <td class="py-2 px-4 border-b">Define sprint goals</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <button class="bg-blue-500 text-white p-2 px-4 mt-4 rounded">Add Meeting</button>
+            </div>
+          </div>
+        `,
+      };
+
+      const DataExchange = {
+        data() {
+          return {
+            selectedOption: null,
+          };
+        },
+        methods: {
+          selectOption(option) {
+            this.selectedOption = option;
+          },
+        },
+        template: `
+          <div class="h-full">
+            <h2 class="text-2xl font-bold mb-4">Data Exchange</h2>
+            <p class="ml-4">Please select an option to get started.</p>
+            <div class="p-4 flex">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div 
+                  @click="selectOption('dataOffering')"
+                  :class="['p-4 rounded-lg cursor-pointer shadow', selectedOption === 'dataOffering' ? 'border-2 border-blue-500' : 'border border-gray-300']"
+                >
+                  <div class="flex justify-between items-start">
+                    <h3 class="text-lg font-semibold">Data Offering</h3>
+                    <span v-if="selectedOption === 'dataOffering'" class="text-blue-500">
+                      <i class="fas fa-check-circle"></i>
+                    </span>
+                  </div>
+                  <p class="text-gray-600 mt-2">Offer your data to others.</p>
+                </div>
+                <div 
+                  @click="selectOption('alertingService')"
+                  :class="['p-4 rounded-lg cursor-pointer shadow', selectedOption === 'alertingService' ? 'border-2 border-blue-500' : 'border border-gray-300']"
+                >
+                  <div class="flex justify-between items-start">
+                    <h3 class="text-lg font-semibold">Alerting Service</h3>
+                    <span v-if="selectedOption === 'alertingService'" class="text-blue-500">
+                      <i class="fas fa-check-circle"></i>
+                    </span>
+                  </div>
+                  <p class="text-gray-600 mt-2">Receive alerts for important updates.</p>
+                </div>
+                <div 
+                  @click="selectOption('dataProcessingService')"
+                  :class="['p-4 rounded-lg cursor-pointer shadow', selectedOption === 'dataProcessingService' ? 'border-2 border-blue-500' : 'border border-gray-300']"
+                >
+                  <div class="flex justify-between items-start">
+                    <h3 class="text-lg font-semibold">Data Processing Service</h3>
+                    <span v-if="selectedOption === 'dataProcessingService'" class="text-blue-500">
+                      <i class="fas fa-check-circle"></i>
+                    </span>
+                  </div>
+                  <p class="text-gray-600 mt-2">Process your data with our tools.</p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <button class="bg-blue-500 text-white p-2 px-4 ml-4 rounded">Next</button>
+            </div>
+          </div>
+        `,
+      };
+
+      const routes = [
+        { path: "/dashboard", component: Dashboard },
+        {
+          path: "/data-collection",
+          component: DataCollection,
+        },
+        {
+          path: "/data-management",
+          component: DataManagement,
+        },
+        {
+          path: "/donor-receipts-generator",
+          component: DonorReceiptsGenerator,
+        },
+        {
+          path: "/data-analysis",
+          component: DataAnalysis,
+        },
+        { path: "/reports", component: Reports },
+        {
+          path: "/communications",
+          component: Communications,
+        },
+        {
+          path: "/data-exchange",
+          component: DataExchange,
+        },
+      ];
+
+      const router = VueRouter.createRouter({
+        history: VueRouter.createWebHashHistory(),
+        routes,
+      });
+
+      const app = Vue.createApp({
+        data() {
+          return {
+            showMenu: false,
+          };
+        },
+        methods: {
+          toggleMenu() {
+            this.showMenu = !this.showMenu;
+          },
+        },
+      });
+      app.use(router);
+      app.component("BudgetUtilization", BudgetUtilization);
+      app.component("FinancialHealth", FinancialHealth);
+      app.component("CostEfficiency", CostEfficiency);
+      app.component("FundingSources", FundingSources);
+      app.component("StaffProductivity", StaffProductivity);
+      app.component("EmployeeSatisfaction", EmployeeSatisfaction);
+      app.component("TrainingDevelopment", TrainingDevelopment);
+      app.mount("#app");
+    </script>
+
+    <style>
+      .nav-item {
+        display: flex;
+        align-items: center;
+      }
+
+      .icon-width {
+        width: 20px;
+        display: inline-block;
+        text-align: center;
+      }
+
+      .menu-text {
+        margin-left: 8px;
+      }
+    </style>
+  </body>
+</html>
