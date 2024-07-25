@@ -21,7 +21,7 @@
       <div
         class="bg-gray-900 text-white flex justify-between items-center p-4 shadow"
       >
-        <div class="text-xl text-slate-300 font-bold">Molnix</div>
+        <div class="text-xl text-slate-300 font-bold">NGO App</div>
         <div class="flex items-center space-x-4">
           <div class="space-x-5 mr-10">
             <router-link
@@ -43,7 +43,7 @@
             />
             <div>
               <p class="font-bold">Jane Doe</p>
-              <p class="text-sm">jdoe@molnix.com</p>
+              <p class="text-sm">jdoe@example.com</p>
             </div>
             <div
               v-if="showMenu"
@@ -1038,59 +1038,61 @@
         template: `
           <div class="h-full">
             <h2 class="text-2xl font-bold mb-4">Donor Receipts Generator</h2>
-            <form class="bg-white p-6 rounded shadow-md space-y-4">
+            <div class="w-full max-w-xl justify-center items-center">
+              <form class="bg-white p-6 rounded shadow-md space-y-4 mx-auto">
+                <div>
+                  <label class="block text-gray-700 font-bold mb-2" for="donor-name">Donor Name</label>
+                  <input class="w-full p-2 border border-gray-300 rounded" id="donor-name" type="text">
+                </div>
+                <div>
+                  <label class="block text-gray-700 font-bold mb-2" for="email">Email</label>
+                  <input class="w-full p-2 border border-gray-300 rounded" id="email" type="email">
+                </div>
+                <div>
+                  <label class="block text-gray-700 font-bold mb-2" for="phone-number">Phone Number</label>
+                  <input class="w-full p-2 border border-gray-300 rounded" id="phone-number" type="tel">
+                </div>
+                <div>
+                  <label class="block text-gray-700 font-bold mb-2" for="amount">Amount</label>
+                  <input class="w-full p-2 border border-gray-300 rounded" id="amount" type="number">
+                </div>
+                <div>
+                  <label class="block text-gray-700 font-bold mb-2" for="volunteer">Volunteer</label>
+                  <select class="w-full p-2 border border-gray-300 rounded" id="volunteer">
+                    <option>Volunteer 1</option>
+                    <option>Volunteer 2</option>
+                    <option>Volunteer 3</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-gray-700 font-bold mb-2" for="purpose">Purpose</label>
+                  <select class="w-full p-2 border border-gray-300 rounded" id="purpose">
+                    <option>Purpose 1</option>
+                    <option>Purpose 2</option>
+                    <option>Purpose 3</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-gray-700 font-bold mb-2" for="pan-no">PAN No.</label>
+                  <input class="w-full p-2 border border-gray-300 rounded" id="pan-no" type="text">
+                </div>
+                <div>
+                  <label class="block text-gray-700 font-bold mb-2" for="address">Address</label>
+                  <input class="w-full p-2 border border-gray-300 rounded" id="address" type="text">
+                </div>
+                <div>
+                  <label class="block text-gray-700 font-bold mb-2" for="payment-type">Payment Type</label>
+                  <select class="w-full p-2 border border-gray-300 rounded" id="payment-type">
+                    <option>Cash</option>
+                    <option>Online Transfer</option>
+                    <option>Gift</option>
+                  </select>
+                </div>
+              </form>
               <div>
-                <label class="block text-gray-700 font-bold mb-2" for="donor-name">Donor Name</label>
-                <input class="w-full p-2 border border-gray-300 rounded" id="donor-name" type="text">
+                <button class="bg-blue-500 text-white p-2 mt-5 rounded">Generate Receipt</button>
               </div>
-              <div>
-                <label class="block text-gray-700 font-bold mb-2" for="email">Email</label>
-                <input class="w-full p-2 border border-gray-300 rounded" id="email" type="email">
-              </div>
-              <div>
-                <label class="block text-gray-700 font-bold mb-2" for="phone-number">Phone Number</label>
-                <input class="w-full p-2 border border-gray-300 rounded" id="phone-number" type="tel">
-              </div>
-              <div>
-                <label class="block text-gray-700 font-bold mb-2" for="amount">Amount</label>
-                <input class="w-full p-2 border border-gray-300 rounded" id="amount" type="number">
-              </div>
-              <div>
-                <label class="block text-gray-700 font-bold mb-2" for="volunteer">Volunteer</label>
-                <select class="w-full p-2 border border-gray-300 rounded" id="volunteer">
-                  <option>Volunteer 1</option>
-                  <option>Volunteer 2</option>
-                  <option>Volunteer 3</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-gray-700 font-bold mb-2" for="purpose">Purpose</label>
-                <select class="w-full p-2 border border-gray-300 rounded" id="purpose">
-                  <option>Purpose 1</option>
-                  <option>Purpose 2</option>
-                  <option>Purpose 3</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-gray-700 font-bold mb-2" for="pan-no">PAN No.</label>
-                <input class="w-full p-2 border border-gray-300 rounded" id="pan-no" type="text">
-              </div>
-              <div>
-                <label class="block text-gray-700 font-bold mb-2" for="address">Address</label>
-                <input class="w-full p-2 border border-gray-300 rounded" id="address" type="text">
-              </div>
-              <div>
-                <label class="block text-gray-700 font-bold mb-2" for="payment-type">Payment Type</label>
-                <select class="w-full p-2 border border-gray-300 rounded" id="payment-type">
-                  <option>Cash</option>
-                  <option>Online Transfer</option>
-                  <option>Gift</option>
-                </select>
-              </div>
-              <div>
-                <button class="bg-blue-500 text-white p-2 mt-4 rounded">Generate Receipt</button>
-              </div>
-            </form>
+            </div>
           </div>
         `,
       };
